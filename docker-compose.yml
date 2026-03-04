@@ -1,0 +1,127 @@
+version: "3.8"
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:v1.12.0
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Embedding Service ───────────────────────────────────────────
+  embedding:
+    build:
+      context: .
+      dockerfile: services/embedding/Dockerfile
+    ports:
+      - "50052:50052"
+    env_file: .env
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import grpc; ch = grpc.insecure_channel('localhost:50052'); grpc.channel_ready_future(ch).result(timeout=2)\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Retrieval Service ──────────────────────────────────────────
+  retrieval:
+    build:
+      context: .
+      dockerfile: services/retrieval/Dockerfile
+    ports:
+      - "50051:50051"
+    env_file: .env
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      embedding:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import grpc; ch = grpc.insecure_channel('localhost:50051'); grpc.channel_ready_future(ch).result(timeout=2)\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ── MCP Server ──────────────────────────────────────────────────
+  mcp-server:
+    build:
+      context: .
+      dockerfile: services/mcp_server/Dockerfile
+    env_file: .env
+    depends_on:
+      retrieval:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── LangGraph Agent ────────────────────────────────────────────
+  agent:
+    build:
+      context: .
+      dockerfile: services/agent/Dockerfile
+    ports:
+      - "50053:50053"
+    env_file: .env
+    depends_on:
+      retrieval:
+        condition: service_healthy
+      mcp-server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import grpc; ch = grpc.insecure_channel('localhost:50053'); grpc.channel_ready_future(ch).result(timeout=2)\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ── FastAPI Gateway ────────────────────────────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      embedding:
+        condition: service_healthy
+      retrieval:
+        condition: service_healthy
+      agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Vue.js Frontend ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:

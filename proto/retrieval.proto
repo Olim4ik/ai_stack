@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package retrieval;
+
+service RetrievalService {
+  rpc Search(SearchRequest) returns (SearchResponse);
+  rpc CreateCollection(CreateCollectionRequest) returns (CreateCollectionResponse);
+  rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse);
+  rpc HealthCheck(Empty) returns (HealthResponse);
+}
+
+message Empty {}
+
+message SearchRequest {
+  string query = 1;
+  string collection = 2;
+  int32 top_k = 3;
+  SearchMode mode = 4;
+  repeated Filter filters = 5;
+}
+
+enum SearchMode {
+  DENSE = 0;
+  HYBRID = 1;
+}
+
+message Filter {
+  string field = 1;
+  string operator = 2;
+  string value = 3;
+}
+
+message SearchResponse {
+  repeated SearchResult results = 1;
+  float search_time_ms = 2;
+}
+
+message SearchResult {
+  string chunk_id = 1;
+  string text = 2;
+  float score = 3;
+  map<string, string> metadata = 4;
+}
+
+message CreateCollectionRequest {
+  string name = 1;
+  int32 vector_size = 2;
+}
+
+message CreateCollectionResponse {
+  bool success = 1;
+}
+
+message DeleteCollectionRequest {
+  string name = 1;
+}
+
+message DeleteCollectionResponse {
+  bool success = 1;
+}
+
+message HealthResponse {
+  bool healthy = 1;
+  string qdrant_status = 2;
+}

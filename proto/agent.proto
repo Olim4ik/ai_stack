@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package agent;
+
+service AgentService {
+  rpc Chat(ChatRequest) returns (stream ChatResponse);
+  rpc ResumeChat(ResumeRequest) returns (stream ChatResponse);
+}
+
+message ChatRequest {
+  string session_id = 1;
+  string message = 2;
+  string team = 3;
+}
+
+message ResumeRequest {
+  string session_id = 1;
+  string action_id = 2;
+  bool approved = 3;
+}
+
+message ChatResponse {
+  string event_type = 1;
+  string data = 2;
+}

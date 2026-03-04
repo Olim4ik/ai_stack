@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package embedding;
+
+service EmbeddingService {
+  rpc Embed(EmbedRequest) returns (EmbedResponse);
+  rpc EmbedBatch(EmbedBatchRequest) returns (EmbedBatchResponse);
+  rpc GetModelInfo(Empty) returns (ModelInfo);
+}
+
+message Empty {}
+
+message EmbedRequest {
+  string text = 1;
+}
+
+message EmbedResponse {
+  repeated float vector = 1;
+  int32 dimensions = 2;
+}
+
+message EmbedBatchRequest {
+  repeated string texts = 1;
+}
+
+message EmbedBatchResponse {
+  repeated EmbedResponse embeddings = 1;
+}
+
+message ModelInfo {
+  string model_name = 1;
+  string provider = 2;
+  int32 dimensions = 3;
+}
