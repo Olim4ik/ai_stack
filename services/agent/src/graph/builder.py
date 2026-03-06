@@ -3,7 +3,7 @@
 from functools import partial
 
 import structlog
-from anthropic import AsyncAnthropic
+from langchain_core.language_models import BaseChatModel
 from langgraph.graph import END, StateGraph
 
 from ..grpc_clients.retrieval import RetrievalClient
@@ -21,8 +21,7 @@ logger = structlog.get_logger()
 
 
 def build_graph(
-    anthropic_client: AsyncAnthropic,
-    model: str,
+    llm: BaseChatModel,
     retrieval_client: RetrievalClient,
     mcp_client: MCPClientWrapper,
 ):
@@ -37,11 +36,11 @@ def build_graph(
     graph = StateGraph(AgentState)
 
     # Bind dependencies to nodes via partial
-    _classify = partial(classify_node, anthropic_client=anthropic_client, model=model)
+    _classify = partial(classify_node, llm=llm)
     _retrieve = partial(retrieve_node, retrieval_client=retrieval_client)
-    _plan = partial(plan_node, anthropic_client=anthropic_client, model=model)
+    _plan = partial(plan_node, llm=llm)
     _execute = partial(execute_node, retrieval_client=retrieval_client, mcp_client=mcp_client)
-    _synthesize = partial(synthesize_node, anthropic_client=anthropic_client, model=model)
+    _synthesize = partial(synthesize_node, llm=llm)
 
     # Add nodes
     graph.add_node("classify", _classify)

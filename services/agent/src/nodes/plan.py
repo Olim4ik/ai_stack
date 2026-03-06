@@ -3,7 +3,8 @@
 import json
 
 import structlog
-from anthropic import AsyncAnthropic
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import HumanMessage
 
 from ..state import AgentState
 
@@ -23,17 +24,13 @@ Example:
 User query: {query}"""
 
 
-async def plan_node(state: AgentState, *, anthropic_client: AsyncAnthropic, model: str) -> dict:
+async def plan_node(state: AgentState, *, llm: BaseChatModel) -> dict:
     """Decompose a multi-step query into sub-tasks."""
     query = state["query"]
 
-    response = await anthropic_client.messages.create(
-        model=model,
-        max_tokens=500,
-        messages=[{"role": "user", "content": PLAN_PROMPT.format(query=query)}],
-    )
+    response = await llm.ainvoke([HumanMessage(content=PLAN_PROMPT.format(query=query))])
 
-    text = response.content[0].text.strip()
+    text = response.content.strip()
 
     try:
         plan = json.loads(text)

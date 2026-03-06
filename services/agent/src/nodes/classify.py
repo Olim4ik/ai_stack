@@ -3,7 +3,8 @@
 import json
 
 import structlog
-from anthropic import AsyncAnthropic
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import HumanMessage
 
 from ..state import AgentState
 
@@ -25,17 +26,13 @@ Respond with ONLY a JSON object: {"query_type": "simple" | "multi_step" | "actio
 User query: {query}"""
 
 
-async def classify_node(state: AgentState, *, anthropic_client: AsyncAnthropic, model: str) -> dict:
+async def classify_node(state: AgentState, *, llm: BaseChatModel) -> dict:
     """Classify the user query into simple/multi_step/action."""
     query = state["query"]
 
-    response = await anthropic_client.messages.create(
-        model=model,
-        max_tokens=100,
-        messages=[{"role": "user", "content": CLASSIFY_PROMPT.format(query=query)}],
-    )
+    response = await llm.ainvoke([HumanMessage(content=CLASSIFY_PROMPT.format(query=query))])
 
-    text = response.content[0].text.strip()
+    text = response.content.strip()
 
     try:
         result = json.loads(text)
