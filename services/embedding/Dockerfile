@@ -2,10 +2,10 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY services/embedding/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ../../proto/embedding.proto /app/proto/embedding.proto
+COPY proto/embedding.proto /app/proto/embedding.proto
 
 # Generate gRPC stubs
 RUN mkdir -p /app/src/generated && \
@@ -17,7 +17,7 @@ RUN mkdir -p /app/src/generated && \
     touch /app/src/generated/__init__.py && \
     sed -i 's/import embedding_pb2/from . import embedding_pb2/' /app/src/generated/embedding_pb2_grpc.py
 
-COPY src/ /app/src/
+COPY services/embedding/src/ /app/src/
 
 EXPOSE 50052
 

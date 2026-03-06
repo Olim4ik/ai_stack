@@ -2,11 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY services/retrieval/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ../../proto/retrieval.proto /app/proto/retrieval.proto
-COPY ../../proto/embedding.proto /app/proto/embedding.proto
+COPY proto/retrieval.proto /app/proto/retrieval.proto
+COPY proto/embedding.proto /app/proto/embedding.proto
 
 # Generate gRPC stubs
 RUN mkdir -p /app/src/generated && \
@@ -19,7 +19,7 @@ RUN mkdir -p /app/src/generated && \
     sed -i 's/import retrieval_pb2/from . import retrieval_pb2/' /app/src/generated/retrieval_pb2_grpc.py && \
     sed -i 's/import embedding_pb2/from . import embedding_pb2/' /app/src/generated/embedding_pb2_grpc.py
 
-COPY src/ /app/src/
+COPY services/retrieval/src/ /app/src/
 
 EXPOSE 50051
 
