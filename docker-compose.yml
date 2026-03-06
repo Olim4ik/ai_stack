@@ -53,16 +53,16 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # ── MCP Server ──────────────────────────────────────────────────
-  mcp-server:
-    build:
-      context: .
-      dockerfile: services/mcp_server/Dockerfile
-    env_file: .env
-    depends_on:
-      retrieval:
-        condition: service_healthy
-    restart: unless-stopped
+  # # ── MCP Server ──────────────────────────────────────────────────
+  # mcp-server:
+  #   build:
+  #     context: .
+  #     dockerfile: services/mcp_server/Dockerfile
+  #   env_file: .env
+  #   depends_on:
+  #     retrieval:
+  #       condition: service_healthy
+  #   restart: unless-stopped
 
   # ── LangGraph Agent ────────────────────────────────────────────
   agent:
@@ -75,8 +75,8 @@ services:
     depends_on:
       retrieval:
         condition: service_healthy
-      mcp-server:
-        condition: service_started
+      # mcp-server:
+      #   condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import grpc; ch = grpc.insecure_channel('localhost:50053'); grpc.channel_ready_future(ch).result(timeout=2)\" || exit 1"]
       interval: 15s
