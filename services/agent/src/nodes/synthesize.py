@@ -1,7 +1,8 @@
 """Synthesize node — generate final answer from gathered context."""
 
 import structlog
-from anthropic import AsyncAnthropic
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import HumanMessage
 
 from ..state import AgentState
 
@@ -26,7 +27,7 @@ Rules:
 {query}"""
 
 
-async def synthesize_node(state: AgentState, *, anthropic_client: AsyncAnthropic, model: str) -> dict:
+async def synthesize_node(state: AgentState, *, llm: BaseChatModel) -> dict:
     """Generate a final cited answer from all gathered context."""
     query = state["query"]
     chunks = state.get("retrieved_chunks", [])
@@ -51,19 +52,15 @@ async def synthesize_node(state: AgentState, *, anthropic_client: AsyncAnthropic
         tool_summary_parts.append(f"Tool: {tr.get('tool', 'unknown')}\nResult: {tr.get('result', tr.get('error', 'N/A'))}")
     tool_summary = "\n\n".join(tool_summary_parts) if tool_summary_parts else "No tool results."
 
-    response = await anthropic_client.messages.create(
-        model=model,
-        max_tokens=2000,
-        messages=[
-            {"role": "user", "content": SYNTHESIZE_PROMPT.format(
-                context=context,
-                tool_results=tool_summary,
-                query=query,
-            )},
-        ],
-    )
+    response = await llm.ainvoke([
+        HumanMessage(content=SYNTHESIZE_PROMPT.format(
+            context=context,
+            tool_results=tool_summary,
+            query=query,
+        )),
+    ])
 
-    answer = response.content[0].text
+    answer = response.content
     logger.info("Answer synthesized", length=len(answer))
 
     return {

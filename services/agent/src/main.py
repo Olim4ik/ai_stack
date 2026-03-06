@@ -3,8 +3,8 @@ import signal
 
 import grpc
 import structlog
-from anthropic import AsyncAnthropic
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
+from langchain_openai import ChatOpenAI
 
 from .config import settings
 from .generated import agent_pb2_grpc
@@ -25,8 +25,11 @@ logger = structlog.get_logger()
 
 
 async def serve() -> None:
-    # Initialize dependencies
-    anthropic_client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    # Initialize LLM via LangChain (swap provider by changing langchain-openai → langchain-anthropic etc.)
+    llm = ChatOpenAI(
+        model=settings.llm_model,
+        api_key=settings.openai_api_key,
+    )
 
     retrieval_client = RetrievalClient(host=settings.retrieval_service_host)
     await retrieval_client.connect()
@@ -39,8 +42,7 @@ async def serve() -> None:
 
     # Build the LangGraph graph
     graph = build_graph(
-        anthropic_client=anthropic_client,
-        model=settings.anthropic_model,
+        llm=llm,
         retrieval_client=retrieval_client,
         mcp_client=mcp_client,
     )
@@ -65,7 +67,7 @@ async def serve() -> None:
     logger.info(
         "Starting Agent Service",
         port=settings.agent_port,
-        model=settings.anthropic_model,
+        model=settings.llm_model,
         retrieval=settings.retrieval_service_host,
     )
 
