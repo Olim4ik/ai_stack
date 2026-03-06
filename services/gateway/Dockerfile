@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY proto/embedding.proto /app/proto/embedding.proto
 COPY proto/retrieval.proto /app/proto/retrieval.proto
+COPY proto/agent.proto /app/proto/agent.proto
 
 # Generate gRPC stubs
 RUN mkdir -p /app/src/generated && \
@@ -14,10 +15,11 @@ RUN mkdir -p /app/src/generated && \
         -I/app/proto \
         --python_out=/app/src/generated \
         --grpc_python_out=/app/src/generated \
-        /app/proto/embedding.proto /app/proto/retrieval.proto && \
+        /app/proto/embedding.proto /app/proto/retrieval.proto /app/proto/agent.proto && \
     touch /app/src/generated/__init__.py && \
     sed -i 's/import embedding_pb2/from . import embedding_pb2/' /app/src/generated/embedding_pb2_grpc.py && \
-    sed -i 's/import retrieval_pb2/from . import retrieval_pb2/' /app/src/generated/retrieval_pb2_grpc.py
+    sed -i 's/import retrieval_pb2/from . import retrieval_pb2/' /app/src/generated/retrieval_pb2_grpc.py && \
+    sed -i 's/import agent_pb2/from . import agent_pb2/' /app/src/generated/agent_pb2_grpc.py
 
 COPY services/gateway/src/ /app/src/
 
