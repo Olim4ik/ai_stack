@@ -1,0 +1,45 @@
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+CLAUDE.md
+docs/
+
+# Tests
+tests/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+
+# Environment (secrets)
+.env
+
+# Docker
+docker-compose.yml
+.dockerignore
+
+# Generated stubs (rebuilt in Dockerfile)
+services/*/src/generated/
+
+# OS
+.DS_Store
+Thumbs.db
